@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Learning Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f9;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    #search-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+    #search-bar {
+      width: 70%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 5px 0 0 5px;
+    }
+    #search-button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 0 5px 5px 0;
+      cursor: pointer;
+    }
+    #search-button:hover {
+      background-color: #0056b3;
+    }
+    #preloaded-videos {
+      margin-top: 20px;
+      padding: 10px;
+    }
+    .video-item {
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .video-item:hover {
+      background-color: #f1f1f1;
+    }
+    #video-player {
+      margin-top: 20px;
+      text-align: center;
+    }
+    #learning-path {
+      margin-top: 20px;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    #back-home {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    #back-home:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Learning Page</h1>
+  
+  <!-- Search Container -->
+  <div id="search-container">
+    <input type="text" id="search-bar" placeholder="Search for learning videos...">
+    <button id="search-button" onclick="searchVideos()">Search</button>
+  </div>
+  
+  <!-- Preloaded Videos -->
+  <div id="preloaded-videos">
+    <h2>Preloaded Learning Videos</h2>
+    <div class="video-item" onclick="playPreloadedVideo('dQw4w9WgXcQ')">Learning Python Basics</div>
+    <div class="video-item" onclick="playPreloadedVideo('M7lc1UVf-VE')">Understanding JavaScript</div>
+    <div class="video-item" onclick="playPreloadedVideo('tgbNymZ7vqY')">Web Development Tips</div>
+  </div>
+
+  <!-- Video Player -->
+  <div id="video-player"></div>
+
+  <!-- Learning Path Section -->
+  <div id="learning-path"></div>
+  
+  <!-- Back to Home Button -->
+  <button id="back-home" onclick="goBackHome()">Back to Home Page</button>
+
+  <script>
+    // API Keys and URLs
+    const apiKey = 'AIzaSyDkMrW39VTGotWz2D7xHYhQSsOMOkmvkS0'; // Your YouTube API key
+    const openAiApiKey = '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';
+
+    // Elements from HTML
+    const searchBar = document.getElementById('search-bar');
+    const videoPlayer = document.getElementById('video-player');
+    const learningPath = document.getElementById('learning-path');
+
+    // Function to search YouTube videos
+    function searchVideos() {
+      const query = searchBar.value;
+      if (!query) {
+        alert("Please enter a search term.");
+        return;
+      }
+
+      const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${query}&type=video&key=${apiKey}`;
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          if (data.items.length > 0) {
+            const videoId = data.items[0].id.videoId;
+            displayVideo(videoId);
+            fetchVideoDetails(videoId);
+          } else {
+            videoPlayer.innerHTML = '<p>No videos found. Try a different search.</p>';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching YouTube videos:', error);
+        });
+    }
+
+    // Function to display the video
+    function displayVideo(videoId) {
+      videoPlayer.innerHTML = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+    }
+
+    // Function to play a preloaded video
+    function playPreloadedVideo(videoId) {
+      displayVideo(videoId);
+      fetchVideoDetails(videoId);
+    }
+
+    // Fetch video details and send them to the OpenAI API
+    function fetchVideoDetails(videoId) {
+      const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${apiKey}`;
+
+      fetch(url)
+        .then(response => response.json())
+        .then(data => {
+          const videoTitle = data.items[0].snippet.title;
+          const videoDescription = data.items[0].snippet.description;
+          getLearningInsights(videoTitle, videoDescription);
+        })
+        .catch(error => {
+          console.error('Error fetching video details:', error);
+        });
+    }
+
+    // Fetch learning insights from the OpenAI API
+    function getLearningInsights(title, description) {
+      const requestData = {
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: "You are an assistant that provides personalized learning insights based on video content."
+          },
+          {
+            role: "user",
+            content: `Analyze the following video details and provide a summary and a personalized learning path:\n\nTitle: ${title}\nDescription: ${description}`
+          }
+        ],
+        max_tokens: 300,
+      };
+
+      fetch("https://api.openai.com/v1/chat/completions", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openAiApiKey}`,
+        },
+        body: JSON.stringify(requestData),
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.choices && data.choices.length > 0) {
+            const responseText = data.choices[0].message.content;
+            displayLearningInsights(responseText);
+          } else {
+            learningPath.innerHTML = '<p>No learning insights available.</p>';
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching OpenAI insights:', error);
+        });
+    }
+
+    // Function to display the learning insights
+    function displayLearningInsights(insights) {
+      learningPath.innerHTML = `
+        <h2>Learning Insights</h2>
+        <p>${insights}</p>
+      `;
+    }
+
+    // Function to go back to the home page
+    function goBackHome() {
+      window.location.href = 'index.html';
+    }
+  </script>
+
+</body>
+</html>
